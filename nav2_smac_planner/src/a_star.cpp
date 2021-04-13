@@ -125,6 +125,7 @@ template<>
 typename AStarAlgorithm<Node2D>::NodePtr AStarAlgorithm<Node2D>::addToGraph(
   const unsigned int & index)
 {
+  std::lock_guard<std::mutex> l(_graph_lock);
   return &(_graph.emplace(index, Node2D(_costmap->getCharMap()[index], index)).first->second);
 }
 
@@ -132,6 +133,7 @@ template<>
 typename AStarAlgorithm<NodeSE2>::NodePtr AStarAlgorithm<NodeSE2>::addToGraph(
   const unsigned int & index)
 {
+  std::lock_guard<std::mutex> l(_graph_lock);
   return &(_graph.emplace(index, NodeSE2(index)).first->second);
 }
 
@@ -242,13 +244,15 @@ bool AStarAlgorithm<NodeT>::createPath(
 
   // Optimization: preallocate all variables
   NodePtr current_node = nullptr;
-  NodePtr neighbor = nullptr;
-  float g_cost = 0.0;
-  NodeVector neighbors;
+  // NodePtr neighbor = nullptr;
+  // float g_cost = 0.0;
   int approach_iterations = 0;
   NeighborIterator neighbor_iterator;
   int analytic_iterations = 0;
   int closest_distance = std::numeric_limits<int>::max();
+
+  using namespace std::chrono;  // NOLINT
+  // duration<double> time_span{};
 
   // Given an index, return a node ptr reference if its collision-free and valid
   const unsigned int max_index = getSizeX() * getSizeY() * getSizeDim3();
@@ -289,6 +293,7 @@ bool AStarAlgorithm<NodeT>::createPath(
 
     // 3) Check if we're at the goal, backtrace if required
     if (isGoal(current_node)) {
+      // std::cout << time_span.count() * 1000 << " ms to do search processing" << std::endl;
       return backtracePath(current_node, path);
     } else if (_best_heuristic_node.first < getToleranceHeuristic()) {
       // Optimization: Let us find when in tolerance and refine within reason
@@ -302,28 +307,35 @@ bool AStarAlgorithm<NodeT>::createPath(
     }
 
     // 4) Expand neighbors of Nbest not visited
-    neighbors.clear();
-    NodeT::getNeighbors(
-      current_node, neighborGetter, _collision_checker, _traverse_unknown, neighbors);
+    // steady_clock::time_point a = steady_clock::now();
 
-    for (neighbor_iterator = neighbors.begin();
-      neighbor_iterator != neighbors.end(); ++neighbor_iterator)
+    tbb::parallel_for(tbb::blocked_range<int>(0, NodeT::getNumNeighbors()),
+                       [&](tbb::blocked_range<int> r)
     {
-      neighbor = *neighbor_iterator;
+      for (int i = r.begin(); i != r.end(); ++i) {
+        // 4.1) Get the neighbor, if it is valid
+        NodePtr neighbor = NodeT::getNeighbor(current_node, neighborGetter, _collision_checker, _traverse_unknown, i);
+        if (!neighbor) {
+          continue;
+        }
 
-      // 4.1) Compute the cost to go to this node
-      g_cost = getAccumulatedCost(current_node) + getTraversalCost(current_node, neighbor);
+        // 4.2) Compute the cost to go to this node
+        float g_cost = getAccumulatedCost(current_node) + getTraversalCost(current_node, neighbor);
 
-      // 4.2) If this is a lower cost than prior, we set this as the new cost and new approach
-      if (g_cost < getAccumulatedCost(neighbor)) {
-        neighbor->setAccumulatedCost(g_cost);
-        neighbor->parent = current_node;
+        // 4.3) If this is a lower cost than prior, we set this as the new cost and new approach
+        if (g_cost < getAccumulatedCost(neighbor)) {
+          neighbor->setAccumulatedCost(g_cost);
+          neighbor->parent = current_node;
 
-        // 4.3) If not in queue or visited, add it, `getNeighbors()` handles
-        neighbor->queued();
-        addNode(g_cost + getHeuristicCost(neighbor), neighbor);
+          // 4.4) If not in queue or visited, add it, `getNeighbors()` handles
+          neighbor->queued();
+          addNode(g_cost + getHeuristicCost(neighbor), neighbor);
+        }
       }
-    }
+    });
+
+    // steady_clock::time_point b = steady_clock::now();
+    // time_span += duration_cast<duration<double>>(b - a);
   }
 
   return false;
@@ -488,6 +500,7 @@ typename AStarAlgorithm<NodeT>::NodePtr & AStarAlgorithm<NodeT>::getGoal()
 template<typename NodeT>
 typename AStarAlgorithm<NodeT>::NodePtr AStarAlgorithm<NodeT>::getNextNode()
 {
+  std::lock_guard<std::mutex> l(_queue_lock);
   NodeBasic<NodeT> node = _queue.top().second;
   _queue.pop();
   return node.graph_node_ptr;
@@ -496,6 +509,7 @@ typename AStarAlgorithm<NodeT>::NodePtr AStarAlgorithm<NodeT>::getNextNode()
 template<>
 typename AStarAlgorithm<NodeSE2>::NodePtr AStarAlgorithm<NodeSE2>::getNextNode()
 {
+  std::lock_guard<std::mutex> l(_queue_lock);
   NodeBasic<NodeSE2> node = _queue.top().second;
   _queue.pop();
 
@@ -509,6 +523,7 @@ typename AStarAlgorithm<NodeSE2>::NodePtr AStarAlgorithm<NodeSE2>::getNextNode()
 template<typename NodeT>
 void AStarAlgorithm<NodeT>::addNode(const float & cost, NodePtr & node)
 {
+  std::lock_guard<std::mutex> l(_queue_lock);
   NodeBasic<NodeT> queued_node(node->getIndex());
   queued_node.graph_node_ptr = node;
   _queue.emplace(cost, queued_node);
@@ -517,6 +532,7 @@ void AStarAlgorithm<NodeT>::addNode(const float & cost, NodePtr & node)
 template<>
 void AStarAlgorithm<NodeSE2>::addNode(const float & cost, NodePtr & node)
 {
+  std::lock_guard<std::mutex> l(_queue_lock);
   NodeBasic<NodeSE2> queued_node(node->getIndex());
   queued_node.pose = node->pose;
   queued_node.graph_node_ptr = node;
@@ -555,6 +571,7 @@ float AStarAlgorithm<NodeT>::getHeuristicCost(const NodePtr & node)
 template<typename NodeT>
 void AStarAlgorithm<NodeT>::clearQueue()
 {
+  std::lock_guard<std::mutex> l(_queue_lock);
   NodeQueue q;
   std::swap(_queue, q);
 }
@@ -562,6 +579,7 @@ void AStarAlgorithm<NodeT>::clearQueue()
 template<typename NodeT>
 void AStarAlgorithm<NodeT>::clearGraph()
 {
+  std::lock_guard<std::mutex> l(_graph_lock);
   Graph g;
   g.reserve(100000);
   std::swap(_graph, g);

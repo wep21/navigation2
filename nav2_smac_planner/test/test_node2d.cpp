@@ -95,41 +95,41 @@ TEST(Node2DTest, test_node_2d)
   EXPECT_THROW(nav2_smac_planner::Node2D::getCoords(436u, 10u, 10u), std::runtime_error);
 }
 
-TEST(Node2DTest, test_node_2d_neighbors)
-{
-  // test neighborhood computation
-  nav2_smac_planner::Node2D::initNeighborhood(10u, nav2_smac_planner::MotionModel::VON_NEUMANN);
-  EXPECT_EQ(nav2_smac_planner::Node2D::_neighbors_grid_offsets.size(), 4u);
-  EXPECT_EQ(nav2_smac_planner::Node2D::_neighbors_grid_offsets[0], -1);
-  EXPECT_EQ(nav2_smac_planner::Node2D::_neighbors_grid_offsets[1], 1);
-  EXPECT_EQ(nav2_smac_planner::Node2D::_neighbors_grid_offsets[2], -10);
-  EXPECT_EQ(nav2_smac_planner::Node2D::_neighbors_grid_offsets[3], 10);
+// TEST(Node2DTest, test_node_2d_neighbors)
+// {
+//   // test neighborhood computation
+//   nav2_smac_planner::Node2D::initNeighborhood(10u, nav2_smac_planner::MotionModel::VON_NEUMANN);
+//   EXPECT_EQ(nav2_smac_planner::Node2D::_neighbors_grid_offsets.size(), 4u);
+//   EXPECT_EQ(nav2_smac_planner::Node2D::_neighbors_grid_offsets[0], -1);
+//   EXPECT_EQ(nav2_smac_planner::Node2D::_neighbors_grid_offsets[1], 1);
+//   EXPECT_EQ(nav2_smac_planner::Node2D::_neighbors_grid_offsets[2], -10);
+//   EXPECT_EQ(nav2_smac_planner::Node2D::_neighbors_grid_offsets[3], 10);
 
-  nav2_smac_planner::Node2D::initNeighborhood(100u, nav2_smac_planner::MotionModel::MOORE);
-  EXPECT_EQ(nav2_smac_planner::Node2D::_neighbors_grid_offsets.size(), 8u);
-  EXPECT_EQ(nav2_smac_planner::Node2D::_neighbors_grid_offsets[0], -1);
-  EXPECT_EQ(nav2_smac_planner::Node2D::_neighbors_grid_offsets[1], 1);
-  EXPECT_EQ(nav2_smac_planner::Node2D::_neighbors_grid_offsets[2], -100);
-  EXPECT_EQ(nav2_smac_planner::Node2D::_neighbors_grid_offsets[3], 100);
-  EXPECT_EQ(nav2_smac_planner::Node2D::_neighbors_grid_offsets[4], -101);
-  EXPECT_EQ(nav2_smac_planner::Node2D::_neighbors_grid_offsets[5], -99);
-  EXPECT_EQ(nav2_smac_planner::Node2D::_neighbors_grid_offsets[6], 99);
-  EXPECT_EQ(nav2_smac_planner::Node2D::_neighbors_grid_offsets[7], 101);
+//   nav2_smac_planner::Node2D::initNeighborhood(100u, nav2_smac_planner::MotionModel::MOORE);
+//   EXPECT_EQ(nav2_smac_planner::Node2D::_neighbors_grid_offsets.size(), 8u);
+//   EXPECT_EQ(nav2_smac_planner::Node2D::_neighbors_grid_offsets[0], -1);
+//   EXPECT_EQ(nav2_smac_planner::Node2D::_neighbors_grid_offsets[1], 1);
+//   EXPECT_EQ(nav2_smac_planner::Node2D::_neighbors_grid_offsets[2], -100);
+//   EXPECT_EQ(nav2_smac_planner::Node2D::_neighbors_grid_offsets[3], 100);
+//   EXPECT_EQ(nav2_smac_planner::Node2D::_neighbors_grid_offsets[4], -101);
+//   EXPECT_EQ(nav2_smac_planner::Node2D::_neighbors_grid_offsets[5], -99);
+//   EXPECT_EQ(nav2_smac_planner::Node2D::_neighbors_grid_offsets[6], 99);
+//   EXPECT_EQ(nav2_smac_planner::Node2D::_neighbors_grid_offsets[7], 101);
 
-  nav2_costmap_2d::Costmap2D costmapA(10, 10, 0.05, 0.0, 0.0, 0);
-  nav2_smac_planner::GridCollisionChecker checker(&costmapA, 72);
-  unsigned char cost = static_cast<unsigned int>(1);
-  nav2_smac_planner::Node2D * node = new nav2_smac_planner::Node2D(cost, 1);
-  std::function<bool(const unsigned int &, nav2_smac_planner::Node2D * &)> neighborGetter =
-    [&, this](const unsigned int & index, nav2_smac_planner::Node2D * & neighbor_rtn) -> bool
-    {
-      return true;
-    };
+//   nav2_costmap_2d::Costmap2D costmapA(10, 10, 0.05, 0.0, 0.0, 0);
+//   nav2_smac_planner::GridCollisionChecker checker(&costmapA, 72);
+//   unsigned char cost = static_cast<unsigned int>(1);
+//   nav2_smac_planner::Node2D * node = new nav2_smac_planner::Node2D(cost, 1);
+//   std::function<bool(const unsigned int &, nav2_smac_planner::Node2D * &)> neighborGetter =
+//     [&, this](const unsigned int & index, nav2_smac_planner::Node2D * & neighbor_rtn) -> bool
+//     {
+//       return true;
+//     };
 
-  nav2_smac_planner::Node2D::NodeVector neighbors;
-  nav2_smac_planner::Node2D::getNeighbors(node, neighborGetter, checker, false, neighbors);
-  delete node;
+//   nav2_smac_planner::Node2D::NodeVector neighbors;
+//   nav2_smac_planner::Node2D::getNeighbors(node, neighborGetter, checker, false, neighbors);
+//   delete node;
 
-  // should be empty since totally invalid
-  EXPECT_EQ(neighbors.size(), 0u);
-}
+//   // should be empty since totally invalid
+//   EXPECT_EQ(neighbors.size(), 0u);
+// }

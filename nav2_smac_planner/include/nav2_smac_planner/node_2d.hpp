@@ -170,6 +170,15 @@ public:
   float getTraversalCost(const NodePtr & child);
 
   /**
+   * @brief Gets the number of neighbors possible
+   * @return Number of neighbors in the node's neighborhood
+   */
+  static inline int getNumNeighbors()
+  {
+    return _neighbors_grid_offsets.size();
+  }
+
+  /**
    * @brief Get index
    * @param x x coordinate of point to get index of
    * @param y y coordinate of point to get index of
@@ -218,18 +227,20 @@ public:
   static void initNeighborhood(
     const unsigned int & x_size_uint,
     const MotionModel & neighborhood);
+
   /**
    * @brief Retrieve all valid neighbors of a node.
    * @param node Pointer to the node we are currently exploring in A*
    * @param graph Reference to graph to discover new nodes
-   * @param neighbors Vector of neighbors to be filled
+   * @param i index to find
    */
-  static void getNeighbors(
+  static Node2D * getNeighbor(
     NodePtr & node,
     std::function<bool(const unsigned int &, nav2_smac_planner::Node2D * &)> & validity_checker,
     GridCollisionChecker & collision_checker,
     const bool & traverse_unknown,
-    NodeVector & neighbors);
+    const int & i);
+
 
   Node2D * parent;
   static double neutral_cost;

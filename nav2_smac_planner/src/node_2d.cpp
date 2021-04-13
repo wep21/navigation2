@@ -116,12 +116,12 @@ void Node2D::initNeighborhood(
   }
 }
 
-void Node2D::getNeighbors(
+Node2D * Node2D::getNeighbor(
   NodePtr & node,
   std::function<bool(const unsigned int &, nav2_smac_planner::Node2D * &)> & NeighborGetter,
   GridCollisionChecker & collision_checker,
   const bool & traverse_unknown,
-  NodeVector & neighbors)
+  const int & i)
 {
   // NOTE(stevemacenski): Irritatingly, the order here matters. If you start in free
   // space and then expand 8-connected, the first set of neighbors will be all cost
@@ -134,18 +134,15 @@ void Node2D::getNeighbors(
   // 100 100 100   where lower-middle '100' is visited with same cost by both bottom '50' nodes
   // Therefore, it is valuable to have some low-potential across the entire map
   // rather than a small inflation around the obstacles
-  int index;
-  NodePtr neighbor;
-  int node_i = node->getIndex();
-
-  for (unsigned int i = 0; i != _neighbors_grid_offsets.size(); ++i) {
-    index = node_i + _neighbors_grid_offsets[i];
-    if (NeighborGetter(index, neighbor)) {
-      if (neighbor->isNodeValid(traverse_unknown, collision_checker) && !neighbor->wasVisited()) {
-        neighbors.push_back(neighbor);
-      }
+  NodePtr neighbor = nullptr;
+  int index = node->getIndex() + _neighbors_grid_offsets[i];
+  if (NeighborGetter(index, neighbor)) {
+    if (neighbor->isNodeValid(traverse_unknown, collision_checker) && !neighbor->wasVisited()) {
+      return neighbor;
     }
   }
+
+  return nullptr;
 }
 
 }  // namespace nav2_smac_planner

@@ -111,6 +111,20 @@ struct MotionTable
    */
   MotionPoses getProjections(const NodeSE2 * node);
 
+  /**
+   * @brief Get projection of motion model
+   * @param node Ptr to SE2 node
+   * @param index to use
+   * @return A motion pose
+   */
+  MotionPose getProjection(const NodeSE2 * node, const int & i);
+
+  /**
+   * @brief Get number of projections of motion model
+   * @return Number of motions possible
+   */
+  int getNumProjections();
+
   MotionPoses projections;
   unsigned int size_x;
   unsigned int num_angle_quantization;
@@ -286,6 +300,15 @@ public:
   }
 
   /**
+   * @brief Gets the number of neighbors possible
+   * @return Number of neighbors in the node's neighborhood
+   */
+  static inline int getNumNeighbors()
+  {
+    return motion_table.getNumProjections();
+  }
+
+  /**
    * @brief Check if this node is valid
    * @param traverse_unknown If we can explore unknown nodes on the graph
    * @return whether this node is valid and collision free
@@ -389,14 +412,14 @@ public:
    * @brief Retrieve all valid neighbors of a node.
    * @param node Pointer to the node we are currently exploring in A*
    * @param validity_checker Functor for state validity checking
-   * @param neighbors Vector of neighbors to be filled
+   * @param i Index of i to find motion for
    */
-  static void getNeighbors(
+  static NodeSE2 * getNeighbor(
     const NodePtr & node,
     std::function<bool(const unsigned int &, nav2_smac_planner::NodeSE2 * &)> & validity_checker,
     GridCollisionChecker & collision_checker,
     const bool & traverse_unknown,
-    NodeVector & neighbors);
+    const int & i);
 
   NodeSE2 * parent;
   Coordinates pose;

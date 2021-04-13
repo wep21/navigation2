@@ -38,6 +38,7 @@ include_directories(
   ${CERES_INCLUDES}
   ${OMPL_INCLUDE_DIRS}
   ${OpenMP_INCLUDE_DIRS}
+  ${TBB_INCLUDE_DIRS}
 )
 
 find_package(OpenMP)
@@ -76,8 +77,8 @@ add_library(${library_name} SHARED
   src/node_2d.cpp
 )
 
-target_link_libraries(${library_name} ${CERES_LIBRARIES} ${OMPL_LIBRARIES} ${OpenMP_LIBRARIES}  OpenMP::OpenMP_CXX)
-target_include_directories(${library_name} PUBLIC ${Eigen3_INCLUDE_DIRS})
+target_link_libraries(${library_name} ${CERES_LIBRARIES} ${OMPL_LIBRARIES} tbb ${TBB_LIBRARIES} ${OpenMP_LIBRARIES}  OpenMP::OpenMP_CXX)
+target_include_directories(${library_name} PUBLIC ${Eigen3_INCLUDE_DIRS} ${TBB_INCLUDE_DIRS})
 
 ament_target_dependencies(${library_name}
   ${dependencies}
@@ -92,8 +93,8 @@ add_library(${library_name}_2d SHARED
   src/node_2d.cpp
 )
 
-target_link_libraries(${library_name}_2d ${CERES_LIBRARIES} ${OMPL_LIBRARIES})
-target_include_directories(${library_name}_2d PUBLIC ${Eigen3_INCLUDE_DIRS})
+target_link_libraries(${library_name}_2d ${CERES_LIBRARIES} ${OMPL_LIBRARIES} tbb ${TBB_LIBRARIES})
+target_include_directories(${library_name}_2d PUBLIC ${Eigen3_INCLUDE_DIRS} ${TBB_INCLUDE_DIRS})
 
 ament_target_dependencies(${library_name}_2d
   ${dependencies}

@@ -211,6 +211,35 @@ MotionPoses MotionTable::getProjections(const NodeSE2 * node)
   return projection_list;
 }
 
+MotionPose MotionTable::getProjection(const NodeSE2 * node, const int & i)
+{
+  const MotionPose & motion_model = projections[i];
+
+  // normalize theta, I know its overkill, but I've been burned before...
+  const float & node_heading = node->pose.theta;
+  float new_heading = node_heading + motion_model._theta;
+
+  if (new_heading >= num_angle_quantization_float) {
+    new_heading -= num_angle_quantization_float;
+  }
+
+  if (new_heading < 0.0) {
+    new_heading += num_angle_quantization_float;
+  }
+
+  MotionPose pose(
+    delta_xs[i][node_heading] + node->pose.x,
+    delta_ys[i][node_heading] + node->pose.y,
+    new_heading);
+
+  return pose;
+}
+
+int MotionTable::getNumProjections()
+{
+  return projections.size();
+}
+
 NodeSE2::NodeSE2(const unsigned int index)
 : parent(nullptr),
   pose(0.0f, 0.0f, 0.0f),
@@ -422,42 +451,39 @@ void NodeSE2::computeWavefrontHeuristic(
   }
 }
 
-void NodeSE2::getNeighbors(
+NodeSE2 * NodeSE2::getNeighbor(
   const NodePtr & node,
   std::function<bool(const unsigned int &, nav2_smac_planner::NodeSE2 * &)> & NeighborGetter,
   GridCollisionChecker & collision_checker,
   const bool & traverse_unknown,
-  NodeVector & neighbors)
+  const int & i)
 {
-  unsigned int index = 0;
   NodePtr neighbor = nullptr;
-  Coordinates initial_node_coords;
-  const MotionPoses motion_projections = motion_table.getProjections(node);
+  const MotionPose motion_projection = motion_table.getProjection(node, i);
 
-  for (unsigned int i = 0; i != motion_projections.size(); i++) {
-    index = NodeSE2::getIndex(
-      static_cast<unsigned int>(motion_projections[i]._x),
-      static_cast<unsigned int>(motion_projections[i]._y),
-      static_cast<unsigned int>(motion_projections[i]._theta),
-      motion_table.size_x, motion_table.num_angle_quantization);
+  unsigned int index = NodeSE2::getIndex(
+    static_cast<unsigned int>(motion_projection._x),
+    static_cast<unsigned int>(motion_projection._y),
+    static_cast<unsigned int>(motion_projection._theta),
+    motion_table.size_x, motion_table.num_angle_quantization);
 
-    if (NeighborGetter(index, neighbor) && !neighbor->wasVisited()) {
-      // Cache the initial pose in case it was visited but valid
-      // don't want to disrupt continuous coordinate expansion
-      initial_node_coords = neighbor->pose;
-      neighbor->setPose(
-        Coordinates(
-          motion_projections[i]._x,
-          motion_projections[i]._y,
-          motion_projections[i]._theta));
-      if (neighbor->isNodeValid(traverse_unknown, collision_checker)) {
-        neighbor->setMotionPrimitiveIndex(i);
-        neighbors.push_back(neighbor);
-      } else {
-        neighbor->setPose(initial_node_coords);
-      }
+  if (NeighborGetter(index, neighbor) && !neighbor->wasVisited()) {
+    // Cache the initial pose in case it was visited but valid
+    // don't want to disrupt continuous coordinate expansion
+    Coordinates initial_node_coords = neighbor->pose;
+    neighbor->setPose(
+      Coordinates(
+        motion_projection._x,
+        motion_projection._y,
+        motion_projection._theta));
+    if (neighbor->isNodeValid(traverse_unknown, collision_checker)) {
+      neighbor->setMotionPrimitiveIndex(i);
+      return neighbor;
+    } else {
+      neighbor->setPose(initial_node_coords);
     }
   }
+  return nullptr;
 }
 
 }  // namespace nav2_smac_planner
