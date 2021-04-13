@@ -77,32 +77,6 @@ public:
 
   typedef std::priority_queue<NodeElement, std::vector<NodeElement>, NodeComparator> NodeQueue;
 
-  // class SearchProcessor {
-
-  //   operator()(const blocked_range<size_t>& r) {
-  //           // 4.1) Get the neighbor, if it is valid
-  //     NodePtr neighbor = NodeT::getNeighbor(current_node, neighborGetter, _collision_checker, _traverse_unknown, i);
-  //     if (!neighbor) {
-  //       continue;
-  //     }
-
-  //     // 4.2) Compute the cost to go to this node
-  //     float g_cost = getAccumulatedCost(current_node) + getTraversalCost(current_node, neighbor);
-
-  //     // 4.3) If this is a lower cost than prior, we set this as the new cost and new approach
-  //     if (g_cost < getAccumulatedCost(neighbor)) {
-  //       neighbor->setAccumulatedCost(g_cost);
-  //       neighbor->parent = current_node;
-
-  //       // 4.4) If not in queue or visited, add it, `getNeighbors()` handles
-  //       neighbor->queued();
-  //       addNode(g_cost + getHeuristicCost(neighbor), neighbor);
-  //     }
-  //   }
-
-  //   friend class AStarAlgorithm;
-  // };
-
   /**
    * @brief A constructor for nav2_smac_planner::PlannerServer
    * @param neighborhood The type of neighborhood to use for search (4 or 8 connected)
