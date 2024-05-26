@@ -11,6 +11,7 @@ find_package(rclcpp_components REQUIRED)
 find_package(nav_msgs REQUIRED)
 find_package(nav2_msgs REQUIRED)
 find_package(yaml_cpp_vendor REQUIRED)
+find_package(yaml-cpp REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(nav2_util REQUIRED)
@@ -93,6 +94,10 @@ ament_target_dependencies(${library_name}
 
 ament_target_dependencies(${map_io_library_name}
   ${map_io_dependencies})
+
+target_link_libraries(${map_io_library_name}
+  yaml-cpp::yaml-cpp
+)
 
 target_link_libraries(${library_name}
   ${map_io_library_name})
